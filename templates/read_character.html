@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 角色殿堂</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; width: 100vw; overflow-y: auto; /* 允许垂直滚动 */
+            background-color: #050505;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            align-items: center;
+            color: #fff; position: relative;
+            padding: 20px;
+        }
+
+        /* --- 更炫酷的背景：星空 + 多层雾气 + 动态渐变 --- */
+        .bg-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                /* 动态渐变天幕：从深紫到墨黑，缓慢旋转 */
+                radial-gradient(circle at 50% 20%, #0f0f23 0%, #1a1a2e 50%, #000 100%);
+            animation: rotateGradient 120s linear infinite;
+            z-index: -3;
+        }
+        @keyframes rotateGradient {
+            0% { background: radial-gradient(circle at 50% 20%, #0f0f23 0%, #1a1a2e 50%, #000 100%); }
+            25% { background: radial-gradient(circle at 20% 50%, #0f0f23 0%, #1a1a2e 50%, #000 100%); }
+            50% { background: radial-gradient(circle at 50% 80%, #0f0f23 0%, #1a1a2e 50%, #000 100%); }
+            75% { background: radial-gradient(circle at 80% 50%, #0f0f23 0%, #1a1a2e 50%, #000 100%); }
+            100% { background: radial-gradient(circle at 50% 20%, #0f0f23 0%, #1a1a2e 50%, #000 100%); }
+        }
+
+        /* 星空层：多层闪烁星星 */
+        .stars {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+        }
+        .stars::before,
+        .stars::after {
+            content: '';
+            position: absolute; width: 100%; height: 100%;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 160px 30px, #eee, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: twinkle 4s linear infinite;
+        }
+        .stars::after {
+            animation-delay: -2s; /* 错开闪烁节奏 */
+            background-image:
+                radial-gradient(1px 1px at 50px 25px, #fff, transparent),
+                radial-gradient(2px 2px at 110px 60px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 190px 90px, #eee, transparent),
+                radial-gradient(2px 2px at 70px 40px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 150px 70px, #fff, transparent);
+            background-size: 250px 120px;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.5; transform: scale(1) translateY(0); }
+            50% { opacity: 1; transform: scale(1.2) translateY(-5px); }
+            100% { opacity: 0.5; transform: scale(1) translateY(0); }
+        }
+
+        /* 多层雾气：增强版，添加颜色渐变雾 */
+        .fog {
+            position: fixed; width: 200%; height: 100%;
+            background:
+                url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x,
+                linear-gradient(90deg, rgba(10,10,20,0.3) 0%, rgba(20,20,40,0.2) 50%, rgba(10,10,20,0.3) 100%);
+            background-size: contain, cover; opacity: 0.15;
+            animation: moveFog 80s linear infinite; z-index: -1;
+        }
+        .fog::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.1;
+            animation: moveFog 120s linear infinite reverse; /* 反向慢雾 */
+        }
+        @keyframes moveFog {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 3rem; margin-bottom: 3rem; color: #ddd;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(102, 126, 234, 0.5);
+            letter-spacing: 8px; z-index: 10;
+            text-align: center;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(102, 126, 234, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 30px rgba(102, 126, 234, 0.8); }
+        }
+
+        /* --- 角色容器 --- */
+        .characters-container {
+            max-width: 1000px;
+            width: 100%;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            padding-bottom: 80px; /* 为返回按钮留空间 */
+        }
+
+        /* --- 角色按钮卡片通用样式 (继承chapter-card，增强为角色主题) --- */
+        .character-card {
+            position: relative;
+            height: 140px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
+            color: #fff;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .character-card h3 {
+            font-size: 1.4rem; margin-bottom: 8px; z-index: 2;
+            font-family: 'Ma Shan Zheng', cursive;
+            color: #e74c3c; /* 红金主题，角色专用 */
+            text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .character-card .character-id {
+            font-size: 0.8rem; color: #888; z-index: 2;
+            font-family: sans-serif; text-transform: uppercase; letter-spacing: 1px;
+            font-weight: bold; opacity: 0.6; margin-top: 5px;
+        }
+
+        /* --- 增强的按钮光效扫过动画 --- */
+        .character-card::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.6s; z-index: 1;
+        }
+        .character-card:hover::before { left: 100%; }
+
+        /* --- 增强脉冲辉光动画，添加粒子效果 --- */
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 15px rgba(231, 76, 60, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(231, 76, 60, 0.5), 0 0 50px rgba(231, 76, 60, 0.3); }
+            100% { box-shadow: 0 0 15px rgba(231, 76, 60, 0.2); }
+        }
+
+        .character-card:hover {
+            transform: translateY(-8px) scale(1.05) rotate(2deg);
+            animation: glowPulse 1.5s ease-in-out;
+            box-shadow: 0 0 40px rgba(231, 76, 60, 0.6), 0 0 60px rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+
+        /* --- 无数据样式 --- */
+        .no-data {
+            text-align: center; color: #888; font-style: italic;
+            font-size: 1.2rem; margin: 2rem 0;
+            z-index: 10;
+        }
+
+        /* 返回天书卷宗按钮 */
+        .back-link {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: #666; text-decoration: none;
+            font-size: 1.2rem; transition: 0.3s;
+            z-index: 10;
+        }
+        .back-link:hover { color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+    <div class="stars"></div>
+    <div class="fog"></div>
+
+    <div class="page-title">角色殿堂</div>
+
+    <div class="characters-container">
+        {% if characters %}
+            {% for char in characters %}
+                <a href="{% url 'read_single_character' id=char.id %}" class="character-card">
+                    <h3>{{ char.name }}</h3>
+                    <span class="character-id">ID: {{ char.id }}</span>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">暂无角色数据。</p>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'read_mainpage' %}" class="back-link">⟵ 返回观星问天</a>
+
+</body>
+</html>

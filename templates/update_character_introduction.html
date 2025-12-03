@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 改命簿</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; width: 100vw; overflow-y: auto;
+            background-color: #050505;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            color: #fff; position: relative;
+        }
+        /* --- 背景动画层 (保持不变) --- */
+        .bg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 90%);
+            z-index: -2;
+        }
+        .fog {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.2;
+            animation: moveFog 60s linear infinite; z-index: -1;
+        }
+        @keyframes moveFog { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+        .fog2 {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.1;
+            animation: moveFog 120s linear infinite reverse; z-index: -1.1;
+        }
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1.5; pointer-events: none; }
+        .star { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
+        .star:nth-child(1) { top: 15%; left: 20%; animation-delay: 0s; } .star:nth-child(2) { top: 25%; left: 80%; animation-delay: 0.5s; } .star:nth-child(3) { top: 40%; left: 10%; animation-delay: 1s; }
+        .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1.2; pointer-events: none; }
+        .particle { position: absolute; width: 4px; height: 4px; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%); border-radius: 50%; animation: float 8s linear infinite; }
+        @keyframes float { 0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-10vh) translateX(0) scale(0); opacity: 0; } }
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; } .particle:nth-child(2) { left: 50%; animation-delay: 4s; }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 3rem; margin-bottom: 2rem; color: #ddd;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            letter-spacing: 8px; z-index: 10;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        /* --- 菜单容器 (样式微调以适应Form) --- */
+        .menu-container {
+            width: 450px; padding: 2.5rem; background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px;
+            backdrop-filter: blur(10px); z-index: 10;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 1s ease-out 0.2s both;
+            display: flex; flex-direction: column; gap: 20px; /* 间距调整 */
+        }
+
+        .subtitle {
+            text-align: center; color: #bdc3c7; margin-bottom: 5px;
+            font-size: 1.2rem; letter-spacing: 2px;
+        }
+
+        /* --- 消息显示样式 --- */
+        .messages {
+            list-style: none; margin: 0 0 1rem 0; padding: 0;
+        }
+        .messages li {
+            padding: 10px 15px; margin-bottom: 10px; border-radius: 8px;
+            text-align: center; font-size: 1rem; letter-spacing: 1px;
+            backdrop-filter: blur(5px);
+            animation: messageFadeIn 0.5s ease-in-out, messageFadeOut 0.5s ease-in-out 4s forwards;
+            opacity: 1;
+        }
+        .messages .success {
+            background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71;
+            text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+        }
+        .messages .error {
+            background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c;
+            text-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+            animation: messageFadeIn 0.5s ease-in-out, messageFadeOut 0.5s ease-in-out 6s forwards;
+        }
+
+        @keyframes messageFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes messageFadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* --- 表单组样式 --- */
+        .form-group {
+            margin-bottom: 1.8rem; position: relative;
+        }
+        .form-group label {
+            display: block; margin-bottom: 0.6rem; font-size: 1.1rem;
+            color: #f1c40f; /* 金色字体 */
+            text-shadow: 0 0 5px rgba(241, 196, 15, 0.3);
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        .form-group select {
+            width: 100%; padding: 1rem 0.8rem; border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px; background: rgba(255, 255, 255, 0.08);
+            color: #ecf0f1; font-size: 1rem; transition: all 0.3s ease;
+            font-family: sans-serif;
+        }
+        .form-group select:focus {
+            outline: none; border-color: #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.2);
+            background: rgba(255, 255, 255, 0.12); transform: translateY(-1px);
+        }
+        .form-group select option {
+            background: rgba(0, 0, 0, 0.9); color: #ecf0f1;
+            padding: 0.5rem; font-size: 1rem;
+        }
+
+        /* --- 文本区域样式 --- */
+        .textarea-group {
+            width: 100%; margin-bottom: 20px;
+        }
+        .textarea-group label {
+            display: block; margin-bottom: 8px; font-size: 1.1rem;
+            color: #f1c40f; /* 金色字体 */
+            text-shadow: 0 0 5px rgba(241, 196, 15, 0.3);
+            letter-spacing: 2px;
+        }
+        .textarea-group textarea {
+            width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px;
+            color: #fff; font-size: 1rem; outline: none; transition: all 0.3s ease;
+            cursor: text; resize: vertical; min-height: 120px;
+            font-family: 'Zhi Mang Xing', cursive; line-height: 1.6;
+        }
+        .textarea-group textarea:focus {
+            border-color: #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.2);
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+        .textarea-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- 提交按钮样式 --- */
+        .submit-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-decoration: none; border-radius: 12px;
+            position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, #4b3621, #d35400);
+            cursor: pointer; width: 100%; color: #fff;
+            font-family: inherit;
+            box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3);
+        }
+        .submit-btn h2 {
+            font-size: 2rem; margin-bottom: 5px; z-index: 2;
+            font-family: 'Ma Shan Zheng', cursive; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            color: #f1c40f;
+        }
+        .submit-btn span {
+            font-size: 0.8rem; z-index: 2; color: rgba(255,255,255,0.8);
+            font-family: sans-serif; text-transform: uppercase; letter-spacing: 2px;
+        }
+        .submit-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s; z-index: 1;
+        }
+        .submit-btn:hover::before { left: 100%; }
+        .submit-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 25px rgba(211, 84, 0, 0.6); }
+
+        /* 返回链接 */
+        .back-link {
+            position: absolute; bottom: 30px;
+            color: #888; text-decoration: none;
+            font-size: 1.2rem; transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .back-link:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="fog"></div>
+    <div class="fog2"></div>
+    <div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div>
+    <div class="particles"><div class="particle"></div><div class="particle"></div></div>
+
+    <div class="page-title">改命簿</div>
+
+    <form class="menu-container" method="post">
+        {% csrf_token %}
+        <p class="subtitle">施展改命之术，改写命运篇章</p>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="name">选择角色</label>
+            <select name="name" id="name" required>
+                <option value="">请选择角色</option>
+                {% for char in characters %}
+                <option value="{{ char }}">{{ char }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="textarea-group">
+            <label for="introduction">命运篇章 (Introduction)</label>
+            <textarea name="introduction" id="introduction" placeholder="请输入新的角色命运描述..." required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn">
+            <h2>施法</h2>
+            <span>Cast Gai Ming Shu</span>
+        </button>
+    </form>
+
+    <a href="{% url 'update_character' %}" class="back-link">⟵ 返回金蝉脱壳</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('form').addEventListener('submit', function(event) {
+                const name = document.getElementById('name').value.trim();
+                const introduction = document.getElementById('introduction').value.trim();
+                if (name === '') {
+                    event.preventDefault();
+                    alert('请选择角色！');
+                    document.getElementById('name').focus();
+                    return false;
+                }
+                if (introduction === '') {
+                    event.preventDefault();
+                    alert('请输入命运篇章！');
+                    document.getElementById('introduction').focus();
+                    return false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

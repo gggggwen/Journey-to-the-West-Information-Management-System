@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 第{{ chapter.chapter_number }}回 {{ chapter.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; width: 100vw; overflow-y: auto; /* 允许垂直滚动 */
+            background-color: #050505;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            align-items: center;
+            color: #fff; position: relative;
+            padding: 20px;
+        }
+
+        /* 背景层与雾气 (与首页一致，降低雾气opacity避免覆盖) */
+        .bg-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 90%);
+            z-index: -2;
+        }
+        .fog {
+            position: fixed; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.1; /* 降低不透明度，避免干扰内容可见性 */
+            animation: moveFog 60s linear infinite; z-index: -1;
+        }
+        @keyframes moveFog { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 2.5rem; margin-bottom: 2rem; color: #ddd;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            letter-spacing: 6px; z-index: 10;
+            text-align: center;
+            border-bottom: 3px solid #f39c12; /* 金橙主题，章节专用 */
+            padding-bottom: 10px;
+        }
+
+        /* --- 章节内容容器 --- */
+        .chapter-container {
+            max-width: 800px;
+            width: 100%;
+            z-index: 10;
+            display: flex; flex-direction: column;
+            gap: 30px;
+            padding-bottom: 80px; /* 增加底部padding，确保返回按钮不重叠 */
+        }
+
+        /* --- 通用卡片样式 (继承menu-card，添加min-height确保可见) --- */
+        .content-card {
+            position: relative;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            min-height: 150px; /* 添加最小高度，确保空卡片也可见 */
+        }
+
+        .content-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 0 30px rgba(243, 156, 18, 0.4), 0 0 40px rgba(243, 156, 18, 0.2);
+            border-color: #f39c12;
+        }
+
+        /* --- 光效扫过动画 --- */
+        .content-card::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.6s; z-index: 1;
+        }
+        .content-card:hover::before { left: 100%; }
+
+        /* --- 新增脉冲辉光动画 --- */
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+        }
+
+        .content-card:hover {
+            animation: glowPulse 1.5s ease-in-out;
+        }
+
+        /* --- 回目部分 --- */
+        .huimu-card {
+            border-left: 4px solid #f39c12;
+        }
+
+        .huimu-card h2 {
+            font-size: 1.8rem; color: #f39c12; text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+            font-family: 'Ma Shan Zheng', cursive; margin-bottom: 10px; z-index: 2;
+        }
+
+        .huimu-card .chapter-num {
+            font-size: 1rem; color: #888; z-index: 2;
+            font-family: sans-serif; text-transform: uppercase; letter-spacing: 2px;
+            font-weight: bold; opacity: 0.7;
+        }
+
+        /* --- 要略部分 (Summary) --- */
+        .yaolue-card {
+            border-left: 4px solid #f39c12;
+        }
+
+        .yaolue-card h3 {
+            font-size: 1.4rem; color: #f39c12; margin-bottom: 15px; z-index: 2;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5); font-family: 'Ma Shan Zheng', cursive;
+            text-align: center;
+        }
+
+        .yaolue-card .summary {
+            color: #ddd; text-align: justify; z-index: 2;
+            line-height: 1.6; white-space: pre-line; /* 支持linebreaks */
+            font-size: 1.1rem;
+        }
+
+        /* --- 仙踪部分 (Locations) --- */
+        .xian踪-card {
+            border-left: 4px solid #f39c12;
+        }
+
+        .xian踪-card h3 {
+            font-size: 1.4rem; color: #f39c12; margin-bottom: 15px; z-index: 2;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5); font-family: 'Ma Shan Zheng', cursive;
+            text-align: center;
+        }
+
+        .locations-list {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px; z-index: 2;
+        }
+
+        .location-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px; border-radius: 4px;
+            text-align: center; color: #ccc;
+            font-size: 0.95rem; line-height: 1.4;
+            border: 1px solid rgba(243, 156, 18, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .location-item:hover {
+            background: rgba(243, 156, 18, 0.1);
+            color: #f39c12;
+            border-color: #f39c12;
+        }
+
+        /* --- 无数据样式 --- */
+        .no-data {
+            text-align: center; color: #888; font-style: italic;
+            font-size: 1.2rem; margin: 2rem 0;
+            z-index: 10;
+        }
+
+        /* 返回天书卷宗按钮 */
+        .back-link {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: #666; text-decoration: none;
+            font-size: 1.2rem; transition: 0.3s;
+            z-index: 20; /* 提高z-index，确保在最上层 */
+        }
+        .back-link:hover { color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+    <div class="fog"></div>
+
+    <div class="page-title">第{{ chapter.chapter_number }}回 {{ chapter.title }}</div> <!-- 移动标题到body外，确保渲染 -->
+
+    <div class="chapter-container">
+        {% if chapter %}
+            <!-- 回目 (Chapter Title) -->
+            <div class="content-card huimu-card">
+                <h2>{{ chapter.title }}</h2>
+                <span class="chapter-num">第{{ chapter.chapter_number }}回</span>
+            </div>
+
+            <!-- 要略 (Summary) -->
+            <div class="content-card yaolue-card">
+                <h3>要略</h3>
+                <div class="summary">{{ chapter.summary|linebreaks }}</div>
+            </div>
+
+            <!-- 仙踪 (Locations) -->
+            <div class="content-card xian踪-card">
+                <h3>仙踪</h3>
+                <div class="locations-list">
+                    {% for location in chapter.locations %}
+                        <div class="location-item">{{ location }}</div>
+                    {% empty %}
+                        <div class="no-data" style="grid-column: 1 / -1;">暂无仙踪记录。</div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p class="no-data">暂无章节数据。</p>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'read_chapter' %}" class="back-link">⟵ 返回一至一百回</a>
+
+</body>
+</html>

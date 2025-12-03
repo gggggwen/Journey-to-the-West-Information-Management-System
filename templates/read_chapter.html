@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 一至一百回</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; width: 100vw; overflow-y: auto; /* 允许垂直滚动 */
+            background-color: #050505;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            align-items: center;
+            color: #fff; position: relative;
+            padding: 20px;
+        }
+
+        /* 背景层与雾气 (与首页一致) */
+        .bg-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 90%);
+            z-index: -2;
+        }
+        .fog {
+            position: fixed; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.2;
+            animation: moveFog 60s linear infinite; z-index: -1;
+        }
+        @keyframes moveFog { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 3rem; margin-bottom: 3rem; color: #ddd;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            letter-spacing: 8px; z-index: 10;
+            text-align: center;
+        }
+
+        /* --- 章节容器 --- */
+        .chapters-container {
+            max-width: 800px;
+            width: 100%;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding-bottom: 60px; /* 为返回按钮留空间 */
+        }
+
+        /* --- 章节按钮卡片通用样式 (继承menu-card) --- */
+        .chapter-card {
+            position: relative;
+            height: 120px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
+            color: #fff;
+            text-align: center;
+            padding: 0 15px;
+        }
+
+        .chapter-card h3 {
+            font-size: 1.2rem; margin-bottom: 5px; z-index: 2;
+            font-family: 'Ma Shan Zheng', cursive;
+            color: #f39c12; /* 金橙主题，章节专用 */
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+        }
+
+        .chapter-card .chapter-num {
+            font-size: 0.9rem; color: #888; z-index: 2;
+            font-family: sans-serif; text-transform: uppercase; letter-spacing: 2px;
+            font-weight: bold; opacity: 0.7; margin-top: 5px;
+        }
+
+        /* --- 增强的按钮光效扫过动画 --- */
+        .chapter-card::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.6s; z-index: 1;
+        }
+        .chapter-card:hover::before { left: 100%; }
+
+        /* --- 新增脉冲辉光动画 --- */
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+        }
+
+        .chapter-card:hover {
+            transform: translateY(-5px) scale(1.02) rotate(1deg);
+            animation: glowPulse 1.5s ease-in-out;
+            box-shadow: 0 0 30px rgba(243, 156, 18, 0.4), 0 0 40px rgba(243, 156, 18, 0.2);
+            border-color: #f39c12;
+        }
+
+        /* --- 无数据样式 --- */
+        .no-data {
+            text-align: center; color: #888; font-style: italic;
+            font-size: 1.2rem; margin: 2rem 0;
+            z-index: 10;
+        }
+
+        /* 返回天书卷宗按钮 */
+        .back-link {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: #666; text-decoration: none;
+            font-size: 1.2rem; transition: 0.3s;
+            z-index: 10;
+        }
+        .back-link:hover { color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+    <div class="fog"></div>
+
+    <div class="page-title">一至一百回</div>
+
+    <div class="chapters-container">
+        {% if chapters %}
+            {% for chapter in chapters %}
+                <a href="{% url 'read_single_chapter' chapter.chapter_number %}" class="chapter-card">
+                    <h3>{{ chapter.title }}</h3>
+                    <span class="chapter-num">第{{ chapter.chapter_number }}回</span>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">暂无章节数据。</p>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'read_mainpage' %}" class="back-link">⟵ 返回观星问天</a>
+
+</body>
+</html>

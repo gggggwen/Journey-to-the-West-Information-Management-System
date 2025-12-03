@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记动态人物关系图谱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Ma Shan Zheng', cursive;
+            overflow: hidden;
+        }
+
+        #header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            color: #ddd;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            letter-spacing: 4px;
+        }
+
+        p {
+            color: #bdc3c7;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: calc(100vh - 120px);
+            position: relative;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 90%);
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1px;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+            cursor: pointer;
+            transition: stroke 0.3s ease;
+        }
+
+        .nodes circle:hover {
+            stroke: #f1c40f;
+            stroke-width: 3px;
+        }
+
+        .node-label {
+            font-family: 'Ma Shan Zheng', cursive;
+            fill: #fff;
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            text-anchor: middle;
+        }
+
+        .link-label {
+            font-family: 'Ma Shan Zheng', cursive;
+            fill: #ccc;
+            pointer-events: none;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        /* 背景雾效和星星 */
+        .fog {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain;
+            opacity: 0.1;
+            animation: moveFog 60s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes moveFog {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars">
+        <div class="star" style="top: 15%; left: 20%; animation-delay: 0s;"></div>
+        <div class="star" style="top: 25%; left: 80%; animation-delay: 0.5s;"></div>
+        <div class="star" style="top: 40%; left: 10%; animation-delay: 1s;"></div>
+        <div class="star" style="top: 60%; left: 70%; animation-delay: 1.5s;"></div>
+        <div class="star" style="top: 80%; left: 30%; animation-delay: 2s;"></div>
+    </div>
+    <div class="fog"></div>
+
+    <div id="header">
+        <h1>西游记动态人物关系图谱</h1>
+        <p>点击人物查看详情，拖拽节点探索关系，鼠标滚轮缩放。</p>
+    </div>
+
+    <div id="chart-container">
+        <svg viewBox="0 0 960 600"></svg>
+    </div>
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script>
+        // ==========================================
+        // 0. 配置区域 (参数暴露位置)
+        // ==========================================
+        const CONFIG = {
+            // 【缩放】: 初始缩放比例。数值越小，图谱看起来越小（离得越远）。
+            initialZoom: 0.6,
+
+            // 【节点大小】: 节点半径的缩放系数。数值越大，圆圈越大。
+            // 原始逻辑大约是 width / 100，这里改为 80 让它稍微变大。
+            nodeRadiusDivisor: 80,
+
+            // 【节点文字】: 人物名字字体大小。
+            nodeFontSize: 14,
+
+            // 【关系文字】: 连线上关系名称的字体大小。
+            linkFontSize: 12,
+
+            // 【连线长度】: 节点之间的斥力和距离。数值越大，节点拉得越开。
+            linkDistance: 150,
+        };
+
+        // ==========================================
+        // 1. 数据接收与处理区域
+        // ==========================================
+
+        var serverData = {{ relationships|safe }};
+
+        // 数据修复函数：因为原数据中 relationship_type.name 为空，这里手动补全以便显示
+        function fixData(data) {
+            return data.map(function(item) {
+                var name = item.relationship_type.name;
+                if (!name || name === "") {
+                    // 根据 ID 简单的硬编码映射，实际项目中可能由后端返回
+                    if (item.relationship_type.id === 1) name = "师徒";
+                    else if (item.relationship_type.id === 9) name = "师兄弟";
+                    else name = "关系";
+                }
+                // 返回修正后的对象
+                item.relationship_type.name = name;
+                return item;
+            });
+        }
+
+        // 将扁平的关系列表转换为 D3 需要的 Nodes 和 Links 格式
+        function processData(data) {
+            var nodesMap = {};
+            var links = [];
+
+            data.forEach(function(rel) {
+                // 处理来源节点
+                if (!nodesMap[rel.from_character.id]) {
+                    nodesMap[rel.from_character.id] = {
+                        id: rel.from_character.id,
+                        name: rel.from_character.name,
+                        group: rel.from_character.id % 20
+                    };
+                }
+                // 处理目标节点
+                if (!nodesMap[rel.to_character.id]) {
+                    nodesMap[rel.to_character.id] = {
+                        id: rel.to_character.id,
+                        name: rel.to_character.name,
+                        group: rel.to_character.id % 20
+                    };
+                }
+
+                // 添加连线
+                links.push({
+                    source: rel.from_character.id,
+                    target: rel.to_character.id,
+                    type: rel.relationship_type.name,
+                    value: 5
+                });
+            });
+
+            return {
+                nodes: Object.values(nodesMap),
+                links: links
+            };
+        }
+
+        // 转换数据
+        var graph = processData(serverData);
+
+        // ==========================================
+        // 2. D3 渲染逻辑
+        // ==========================================
+
+        var svg = d3.select("svg"),
+            width = 960,
+            height = 600,
+            g = svg.append("g");
+
+        var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+        // 【应用配置】：根据配置计算节点半径
+        var nodeRadius = Math.min(width, height) / CONFIG.nodeRadiusDivisor;
+
+        // 初始化力导向模拟
+        var simulation = d3.forceSimulation()
+            // 【应用配置】：调整连线距离
+            .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(CONFIG.linkDistance))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collide", d3.forceCollide().radius(nodeRadius + 15));
+
+        // 绘制连线
+        var link = g.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graph.links)
+            .enter().append("line")
+            .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+        // 绘制节点
+        var node = g.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graph.nodes)
+            .enter().append("circle")
+            .attr("r", nodeRadius)
+            .attr("fill", function(d) { return color(d.group); })
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        // 点击节点跳转
+        node.on("click", function(d) {
+            window.location.href = "read_single_character/" + d.id;
+        });
+
+        // 节点标签 (显示人物名字)
+        var labels = g.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(graph.nodes)
+            .enter().append("text")
+            .attr("class", "node-label")
+            // 【应用配置】：使用配置的字体大小
+            .style("font-size", CONFIG.nodeFontSize + "px")
+            .text(function(d) { return d.name; });
+
+        // 关系标签 (显示关系类型)
+        var linkLabels = g.append("g")
+            .attr("class", "link-labels")
+            .selectAll("text")
+            .data(graph.links)
+            .enter().append("text")
+            .attr("class", "link-label")
+            // 【应用配置】：使用配置的字体大小
+            .style("font-size", CONFIG.linkFontSize + "px")
+            .text(function(d) { return d.type; }); // 这里依赖 fixData 修复后的 name
+
+        // Title 提示
+        node.append("title")
+            .text(function(d) { return d.name; });
+
+        // 启动模拟
+        simulation
+            .nodes(graph.nodes)
+            .on("tick", ticked);
+
+        simulation.force("link")
+            .links(graph.links);
+
+        // 缩放功能
+        var zoom = d3.zoom()
+            .scaleExtent([0.1, 8])
+            .on("zoom", zoomed);
+
+        svg.call(zoom);
+
+        // 初始缩放
+        // 【应用配置】：使用配置的初始缩放比例
+        var initialScale = CONFIG.initialZoom;
+
+        // 计算居中偏移
+        var initialTranslateX = (width - width * initialScale) / 2;
+        var initialTranslateY = (height - height * initialScale) / 2;
+
+        svg.call(zoom.transform, d3.zoomIdentity.translate(initialTranslateX, initialTranslateY).scale(initialScale));
+
+        function zoomed() {
+            g.attr("transform", d3.event.transform);
+        }
+
+        // 响应式调整
+        function updateSizes() {
+            var newWidth = window.innerWidth - 40;
+            var newHeight = window.innerHeight - 160;
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+            simulation.alpha(0.3).restart();
+        }
+        window.addEventListener('resize', updateSizes);
+
+        function ticked() {
+            link
+                .attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node
+                .attr("cx", function(d) { return d.x; })
+                .attr("cy", function(d) { return d.y; });
+
+            labels
+                .attr("x", function(d) { return d.x; })
+                .attr("y", function(d) { return d.y + nodeRadius + 5; }); // 稍微下移文字
+
+            linkLabels
+                .attr("x", function(d) { return (d.source.x + d.target.x) / 2; })
+                .attr("y", function(d) { return (d.source.y + d.target.y) / 2; });
+        }
+
+        function dragstarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    </script>
+</body>
+
+</html>

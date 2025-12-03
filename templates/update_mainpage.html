@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 正本清源</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            height: 100vh; width: 100vw; overflow: hidden;
+            background-color: #020202;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            color: #fff; position: relative;
+        }
+        /* 背景层与雾气 (与首页一致，调整为更深沉的深蓝灰渐变) */
+        .bg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #0f0f23 0%, #000 90%);
+            z-index: -2;
+        }
+        .fog {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.15;
+            animation: moveFog 60s linear infinite; z-index: -1;
+        }
+        @keyframes moveFog { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+        /* 新增：第二层雾气，速度更慢，反方向移动，增加深度感 */
+        .fog2 {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.08;
+            animation: moveFog 120s linear infinite reverse; z-index: -1.1;
+        }
+        /* 新增：闪烁星辰背景动画，调整为更暗淡的星光 */
+        .stars {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1.5; pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: #ccc;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+            box-shadow: 0 0 4px rgba(204, 204, 204, 0.6);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.5); }
+        }
+        /* 为每个星辰设置不同位置和延迟，实现随机闪烁效果 */
+        .star:nth-child(1) { top: 15%; left: 20%; animation-delay: 0s; }
+        .star:nth-child(2) { top: 25%; left: 80%; animation-delay: 0.5s; }
+        .star:nth-child(3) { top: 40%; left: 10%; animation-delay: 1s; }
+        .star:nth-child(4) { top: 50%; left: 60%; animation-delay: 1.5s; }
+        .star:nth-child(5) { top: 65%; left: 40%; animation-delay: 2s; }
+        .star:nth-child(6) { top: 75%; left: 90%; animation-delay: 0.8s; }
+        .star:nth-child(7) { top: 85%; left: 30%; animation-delay: 2.2s; }
+        .star:nth-child(8) { top: 10%; left: 70%; animation-delay: 1.2s; }
+        /* 新增：浮动光点动画，模拟灵气流动，调整为更暗淡的灰白 */
+        .particles {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1.2; pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: radial-gradient(circle, rgba(200,200,200,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 8s linear infinite;
+        }
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(90vh) translateX(20px) scale(1);
+            }
+            90% {
+                opacity: 1;
+                transform: translateY(10vh) translateX(-10px) scale(1);
+            }
+            100% {
+                transform: translateY(-10vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+        }
+        /* 为光点设置起始位置和延迟 */
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 30%; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 50%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 70%; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 90%; animation-delay: 3s; }
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 3rem; margin-bottom: 3rem; color: #bbb;
+            text-shadow: 0 0 10px rgba(187,187,187,0.2);
+            letter-spacing: 8px; z-index: 10;
+            animation: fadeInUp 1s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* --- 按钮容器 --- */
+        .buttons-container {
+            width: 420px; padding: 2.5rem; background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
+            backdrop-filter: blur(15px); z-index: 10;
+            box-shadow: 0 0 30px rgba(100, 100, 100, 0.1);
+            animation: fadeInUp 1s ease-out 0.2s both;
+            display: flex; flex-direction: column; gap: 1.2rem;
+        }
+        /* --- 更新按钮样式（基于提交按钮，更深沉的深紫灰调） --- */
+        .update-btn {
+            padding: 1.2rem; background: linear-gradient(135deg, #5d3a6b, #4a2d55);
+            border: none; border-radius: 10px; color: #fff; font-size: 1.3rem;
+            font-family: 'Ma Shan Zheng', cursive; cursor: pointer; transition: all 0.4s ease;
+            text-shadow: 0 0 5px rgba(255,255,255,0.4); box-shadow: 0 4px 20px rgba(93, 58, 107, 0.2);
+            position: relative; overflow: hidden; text-align: center; text-decoration: none;
+            display: block;
+        }
+        .update-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .update-btn:hover::before { left: 100%; }
+        .update-btn:hover {
+            transform: translateY(-3px); box-shadow: 0 6px 25px rgba(93, 58, 107, 0.3);
+            background: linear-gradient(135deg, #4a2d55, #5d3a6b);
+        }
+        /* 为不同按钮添加微妙变体，更深沉的深蓝、深红、深棕 */
+        .update-character { background: linear-gradient(135deg, #1e3a5f, #162847); box-shadow: 0 4px 20px rgba(30, 58, 95, 0.2); }
+        .update-character:hover { background: linear-gradient(135deg, #162847, #1e3a5f); box-shadow: 0 6px 25px rgba(30, 58, 95, 0.3); }
+        .update-weapon { background: linear-gradient(135deg, #4a1f1f, #3a1717); box-shadow: 0 4px 20px rgba(74, 31, 31, 0.2); }
+        .update-weapon:hover { background: linear-gradient(135deg, #3a1717, #4a1f1f); box-shadow: 0 6px 25px rgba(74, 31, 31, 0.3); }
+        .update-location { background: linear-gradient(135deg, #4a3a1f, #3a2f17); box-shadow: 0 4px 20px rgba(74, 58, 31, 0.2); }
+        .update-location:hover { background: linear-gradient(135deg, #3a2f17, #4a3a1f); box-shadow: 0 6px 25px rgba(74, 58, 31, 0.3); }
+        /* 新增：消息提示样式，调整为更深沉的色调 */
+        .messages-container {
+            position: relative; z-index: 10; width: 420px; margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+        .alert {
+            padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;
+            font-family: 'Ma Shan Zheng', cursive; font-size: 1.1rem;
+            text-align: center; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .alert-error {
+            background: rgba(74, 31, 31, 0.3); color: #a52a2a;
+            border-color: rgba(74, 31, 31, 0.3);
+            text-shadow: 0 0 5px rgba(165, 42, 42, 0.2);
+        }
+        .alert-success {
+            background: rgba(30, 58, 95, 0.3); color: #4169e1;
+            border-color: rgba(30, 58, 95, 0.3);
+            text-shadow: 0 0 5px rgba(65, 105, 225, 0.2);
+        }
+        /* 返回按钮 */
+        .back-link {
+            position: absolute; bottom: 30px;
+            color: #666; text-decoration: none;
+            font-size: 1.2rem; transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .back-link:hover { color: #ccc; text-shadow: 0 0 10px rgba(204,204,204,0.3); }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="fog"></div>
+    <div class="fog2"></div>
+    <div class="stars">
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+    </div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    <div class="page-title">正本清源</div>
+    <!-- 添加消息显示区域 -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="buttons-container">
+        <a href="{% url 'update_character' %}" class="update-btn update-character">金蝉脱壳</a>
+        <a href="{% url 'update_weapon' %}" class="update-btn update-weapon">旧骨铸锋</a>
+        <a href="{% url 'update_location' %}" class="update-btn update-location"> 山海挪移</a>
+    </div>
+    <a href="{% url 'main_page' %}" class="back-link">⟵ 返回天书卷宗</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-10px)';
+                    setTimeout(function() {
+                        if (alert.parentNode) {
+                            alert.parentNode.style.display = 'none'; // 先隐藏容器以避免布局跳动
+                            // 如果所有alert都处理完，移除整个容器
+                            if (alert.parentNode.querySelectorAll('.alert').length === 0) {
+                                alert.parentNode.remove();
+                            }
+                        }
+                    }, 500); // 淡出动画时间
+                }, 3000); // 3秒后开始淡出
+            });
+        });
+    </script>
+</body>
+</html>

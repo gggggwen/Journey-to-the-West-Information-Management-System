@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记 - 采珠耀璧</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 继承首页的基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            height: 100vh; width: 100vw; overflow: hidden;
+            background-color: #050505;
+            font-family: 'Ma Shan Zheng', cursive;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            color: #fff; position: relative;
+        }
+
+        /* 背景层与雾气 (与首页一致) */
+        .bg-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 90%);
+            z-index: -2;
+        }
+        .fog {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://raw.githubusercontent.com/yoshiharuyamashita/css-fog-animation/master/img/fog1.png') repeat-x;
+            background-size: contain; opacity: 0.2;
+            animation: moveFog 60s linear infinite; z-index: -1;
+        }
+        @keyframes moveFog { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+
+        /* --- 页面标题 --- */
+        .page-title {
+            font-size: 3rem; margin-bottom: 3rem; color: #ddd;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            letter-spacing: 8px; z-index: 10;
+        }
+
+        /* --- 二元菜单容器 --- */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            z-index: 10;
+            perspective: 1000px;
+        }
+
+        /* --- 按钮卡片通用样式 --- */
+        .menu-card {
+            position: relative;
+            width: 260px; height: 160px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .menu-card h2 {
+            font-size: 2.2rem; margin-bottom: 5px; z-index: 2;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .menu-card span {
+            font-size: 1rem; color: #888; z-index: 2;
+            font-family: sans-serif; text-transform: uppercase; letter-spacing: 2px;
+            font-weight: bold; opacity: 0.7;
+        }
+
+        /* --- 增强的按钮光效扫过动画 --- */
+        .menu-card::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.6s; z-index: 1;
+        }
+        .menu-card:hover::before { left: 100%; }
+
+        /* --- 新增脉冲辉光动画 --- */
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px) scale(1.02) rotate(2deg);
+            animation: glowPulse 1.5s ease-in-out;
+        }
+
+        /* --- 个性化配色 (更改为蓝紫主题) --- */
+
+        /* 1. 点灵塑骨 (Create Character) - 蓝宝石蓝 */
+        .card-character { border-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.1); }
+        .card-character h2 { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .card-character:hover { box-shadow: 0 0 30px rgba(52, 152, 219, 0.4), 0 0 40px rgba(52, 152, 219, 0.2); border-color: #3498db; }
+
+        /* 2. 淬刃凝锋 (Create Weapon) - 紫罗兰紫 */
+        .card-weapon { border-color: #9b59b6; box-shadow: 0 0 15px rgba(155, 89, 182, 0.1); }
+        .card-weapon h2 { color: #9b59b6; text-shadow: 0 0 10px rgba(155, 89, 182, 0.5); }
+        .card-weapon:hover { box-shadow: 0 0 30px rgba(155, 89, 182, 0.4), 0 0 40px rgba(155, 89, 182, 0.2); border-color: #9b59b6; }
+
+        /* 返回天书卷宗按钮 */
+        .back-link {
+            position: absolute; bottom: 30px;
+            color: #666; text-decoration: none;
+            font-size: 1.2rem; transition: 0.3s;
+            z-index: 10;
+        }
+        .back-link:hover { color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+    <div class="fog"></div>
+
+    <div class="page-title">采珠耀璧</div>
+
+    <div class="menu-grid">
+        <a href="{% url 'create_character' %}" class="menu-card card-character">
+            <h2>点灵塑骨</h2>
+            <span>Create Character</span>
+        </a>
+
+        <a href="{% url 'create_weapon' %}" class="menu-card card-weapon">
+            <h2>淬刃凝锋</h2>
+            <span>Create Weapon</span>
+        </a>
+    </div>
+
+    <a href="{% url 'main_page' %}" class="back-link">⟵ 返回天书卷宗</a>
+
+</body>
+</html>
