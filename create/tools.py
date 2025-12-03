@@ -171,7 +171,7 @@ class Query:
             },
             'relationship_type': {
                 'id': rel.relationship_type.id,
-                'name': getattr(rel.relationship_type, 'name', ''),
+                'name': getattr(rel.relationship_type, 'type', ''),
                 # 如果 Relationship_Type 有其他字段可继续补充
             },
             # 如有 direction / description 等额外字段，可在此添加

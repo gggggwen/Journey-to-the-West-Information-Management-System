@@ -54,12 +54,14 @@
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
         }
 
+        /* 连线样式 */
         .links line {
             stroke: #999;
             stroke-opacity: 0.6;
             stroke-width: 1px;
         }
 
+        /* 节点样式 */
         .nodes circle {
             stroke: #fff;
             stroke-width: 1.5px;
@@ -73,6 +75,7 @@
             stroke-width: 3px;
         }
 
+        /* 节点文字样式 */
         .node-label {
             font-family: 'Ma Shan Zheng', cursive;
             fill: #fff;
@@ -81,11 +84,12 @@
             text-anchor: middle;
         }
 
+        /* 连线关系文字样式 */
         .link-label {
             font-family: 'Ma Shan Zheng', cursive;
-            fill: #ccc;
+            fill: #aaa; /* 稍微暗一点的颜色，避免太抢眼 */
             pointer-events: none;
-            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.9); /* 加重阴影以在连线上看清 */
             text-anchor: middle;
             dominant-baseline: central;
         }
@@ -159,63 +163,38 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script>
         // ==========================================
-        // 0. 配置区域 (参数暴露位置)
+        // 0. 配置区域
         // ==========================================
         const CONFIG = {
-            // 【缩放】: 初始缩放比例。数值越小，图谱看起来越小（离得越远）。
-            initialZoom: 0.6,
-
-            // 【节点大小】: 节点半径的缩放系数。数值越大，圆圈越大。
-            // 原始逻辑大约是 width / 100，这里改为 80 让它稍微变大。
-            nodeRadiusDivisor: 80,
-
-            // 【节点文字】: 人物名字字体大小。
-            nodeFontSize: 14,
-
-            // 【关系文字】: 连线上关系名称的字体大小。
-            linkFontSize: 12,
-
-            // 【连线长度】: 节点之间的斥力和距离。数值越大，节点拉得越开。
-            linkDistance: 150,
+            initialZoom: 0.7,      // 初始缩放
+            nodeRadiusDivisor: 70, // 节点大小系数 (越小节点越大)
+            nodeFontSize: 14,      // 节点文字大小 (人物名)
+            linkFontSize: 10,      // 连线文字大小 (关系名) - 调小以符合要求
+            linkDistance: 120,     // 连线长度
         };
 
         // ==========================================
-        // 1. 数据接收与处理区域
+        // 1. 数据接收与处理
         // ==========================================
 
+        // 接收后端传递的 JSON 数据
         var serverData = {{ relationships|safe }};
 
-        // 数据修复函数：因为原数据中 relationship_type.name 为空，这里手动补全以便显示
-        function fixData(data) {
-            return data.map(function(item) {
-                var name = item.relationship_type.name;
-                if (!name || name === "") {
-                    // 根据 ID 简单的硬编码映射，实际项目中可能由后端返回
-                    if (item.relationship_type.id === 1) name = "师徒";
-                    else if (item.relationship_type.id === 9) name = "师兄弟";
-                    else name = "关系";
-                }
-                // 返回修正后的对象
-                item.relationship_type.name = name;
-                return item;
-            });
-        }
-
-        // 将扁平的关系列表转换为 D3 需要的 Nodes 和 Links 格式
+        // 将后端字典列表转换为 D3 需要的 Nodes 和 Links
         function processData(data) {
             var nodesMap = {};
             var links = [];
 
             data.forEach(function(rel) {
-                // 处理来源节点
+                // 1. 提取来源节点
                 if (!nodesMap[rel.from_character.id]) {
                     nodesMap[rel.from_character.id] = {
                         id: rel.from_character.id,
                         name: rel.from_character.name,
-                        group: rel.from_character.id % 20
+                        group: rel.from_character.id % 20 // 简单的分组颜色
                     };
                 }
-                // 处理目标节点
+                // 2. 提取目标节点
                 if (!nodesMap[rel.to_character.id]) {
                     nodesMap[rel.to_character.id] = {
                         id: rel.to_character.id,
@@ -224,12 +203,16 @@
                     };
                 }
 
-                // 添加连线
+                // 3. 提取连线关系
+                // 核心修改：确保 relationship_type.name 被正确读取
+                // 如果后端传来空字符串，可以使用 || "关系" 提供默认值
+                var relName = rel.relationship_type.name || "";
+
                 links.push({
-                    source: rel.from_character.id,
+                    source: rel.from_character.id, // D3 v4 会自动匹配 id
                     target: rel.to_character.id,
-                    type: rel.relationship_type.name,
-                    value: 5
+                    type: relName,                 // 这里存储关系名称
+                    value: 3
                 });
             });
 
@@ -239,7 +222,6 @@
             };
         }
 
-        // 转换数据
         var graph = processData(serverData);
 
         // ==========================================
@@ -252,27 +234,37 @@
             g = svg.append("g");
 
         var color = d3.scaleOrdinal(d3.schemeCategory20);
-
-        // 【应用配置】：根据配置计算节点半径
         var nodeRadius = Math.min(width, height) / CONFIG.nodeRadiusDivisor;
 
-        // 初始化力导向模拟
+        // 力导向模拟器
         var simulation = d3.forceSimulation()
-            // 【应用配置】：调整连线距离
             .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(CONFIG.linkDistance))
             .force("charge", d3.forceManyBody().strength(-300))
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collide", d3.forceCollide().radius(nodeRadius + 15));
+            .force("collide", d3.forceCollide().radius(nodeRadius + 20));
 
-        // 绘制连线
+        // 绘制顺序优化：连线 -> 连线文字 -> 节点 -> 节点文字
+        // 这样节点可以遮挡住穿过它下方的连线文字，看起来更整洁
+
+        // 1. 绘制连线
         var link = g.append("g")
             .attr("class", "links")
             .selectAll("line")
             .data(graph.links)
             .enter().append("line")
-            .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+            .attr("stroke-width", 1.5);
 
-        // 绘制节点
+        // 2. 绘制连线上的关系文字 (新增功能)
+        var linkLabels = g.append("g")
+            .attr("class", "link-labels")
+            .selectAll("text")
+            .data(graph.links)
+            .enter().append("text")
+            .attr("class", "link-label")
+            .style("font-size", CONFIG.linkFontSize + "px") // 使用配置的小字体
+            .text(function(d) { return d.type; });
+
+        // 3. 绘制节点圆圈
         var node = g.append("g")
             .attr("class", "nodes")
             .selectAll("circle")
@@ -285,34 +277,22 @@
                 .on("drag", dragged)
                 .on("end", dragended));
 
-        // 点击节点跳转
+        // 节点点击跳转
         node.on("click", function(d) {
             window.location.href = "read_single_character/" + d.id;
         });
 
-        // 节点标签 (显示人物名字)
+        // 4. 绘制节点旁边的人物名称
         var labels = g.append("g")
             .attr("class", "labels")
             .selectAll("text")
             .data(graph.nodes)
             .enter().append("text")
             .attr("class", "node-label")
-            // 【应用配置】：使用配置的字体大小
             .style("font-size", CONFIG.nodeFontSize + "px")
             .text(function(d) { return d.name; });
 
-        // 关系标签 (显示关系类型)
-        var linkLabels = g.append("g")
-            .attr("class", "link-labels")
-            .selectAll("text")
-            .data(graph.links)
-            .enter().append("text")
-            .attr("class", "link-label")
-            // 【应用配置】：使用配置的字体大小
-            .style("font-size", CONFIG.linkFontSize + "px")
-            .text(function(d) { return d.type; }); // 这里依赖 fixData 修复后的 name
-
-        // Title 提示
+        // 鼠标悬停提示
         node.append("title")
             .text(function(d) { return d.name; });
 
@@ -331,49 +311,42 @@
 
         svg.call(zoom);
 
-        // 初始缩放
-        // 【应用配置】：使用配置的初始缩放比例
+        // 初始缩放与居中
         var initialScale = CONFIG.initialZoom;
-
-        // 计算居中偏移
         var initialTranslateX = (width - width * initialScale) / 2;
         var initialTranslateY = (height - height * initialScale) / 2;
-
         svg.call(zoom.transform, d3.zoomIdentity.translate(initialTranslateX, initialTranslateY).scale(initialScale));
 
         function zoomed() {
             g.attr("transform", d3.event.transform);
         }
 
-        // 响应式调整
-        function updateSizes() {
-            var newWidth = window.innerWidth - 40;
-            var newHeight = window.innerHeight - 160;
-            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
-            simulation.alpha(0.3).restart();
-        }
-        window.addEventListener('resize', updateSizes);
-
+        // 实时更新位置
         function ticked() {
+            // 更新连线位置
             link
                 .attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function(d) { return d.target.y; });
 
+            // 更新连线文字位置 (放在连线中点)
+            linkLabels
+                .attr("x", function(d) { return (d.source.x + d.target.x) / 2; })
+                .attr("y", function(d) { return (d.source.y + d.target.y) / 2; });
+
+            // 更新节点位置
             node
                 .attr("cx", function(d) { return d.x; })
                 .attr("cy", function(d) { return d.y; });
 
+            // 更新人物名称位置 (节点下方)
             labels
                 .attr("x", function(d) { return d.x; })
-                .attr("y", function(d) { return d.y + nodeRadius + 5; }); // 稍微下移文字
-
-            linkLabels
-                .attr("x", function(d) { return (d.source.x + d.target.x) / 2; })
-                .attr("y", function(d) { return (d.source.y + d.target.y) / 2; });
+                .attr("y", function(d) { return d.y + nodeRadius + 12; });
         }
 
+        // 拖拽控制函数
         function dragstarted(d) {
             if (!d3.event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -390,6 +363,14 @@
             d.fx = null;
             d.fy = null;
         }
+
+        // 窗口大小调整适配
+        window.addEventListener('resize', function() {
+            var newWidth = window.innerWidth - 40;
+            var newHeight = window.innerHeight - 160;
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+            simulation.alpha(0.3).restart();
+        });
     </script>
 </body>
 
