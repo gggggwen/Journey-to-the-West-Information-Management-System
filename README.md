@@ -2,6 +2,28 @@
 
 ### 1.运行
 
+#### 1.1.配置
+在 jtw_info_management/settigs.py 中:
+```
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "Journey_to_the_West",
+        "HOST": "127.0.0.1",
+        "PORT": "3306",
+        "USER": "用户自拟",
+        "PASSWORD": "用户自拟",
+    }
+}
+```
+#### 1.2.首次运行运行
+```
+conda activate info_system # 创建虚拟环境,仅首次使用需要
+
+python initialize_databases.py #初始化数据库,仅首次使用需要
+
+python manage.py runserver # 运行服务器
+```
 ### 2.实现
 
 前端纯HTML 后端Django
