@@ -1,8 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User  # 可选：关联用户
 from django.utils import timezone  # 可选：时间戳
-
-
+from typing import List, Dict, Any, Optional
+import json
 #看作一个模型,在Django的ORM中
 class Character(models.Model):
     """
@@ -113,7 +112,76 @@ class Weapon(models.Model):
         # 可选：保存前图片处理（如缩放），需安装 Pillow
         super().save(*args, **kwargs)
 
+    @classmethod
+    def all_weapon(cls,
+                   as_dict: bool = True,
+                   include_owner: bool = True,
+                   only_owned: bool = False,
+                   search: str = None,
+                   limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        获取所有武器数据（类方法）
 
+        参数:
+            as_dict: True 返回 list[dict]（推荐前端使用），False 返回 QuerySet
+            include_owner: 是否包含拥有者详细信息
+            only_owned: True 只返回有主人的武器，False 返回全部
+            search: 模糊搜索武器名称
+            limit: 返回条数限制（常用于首页展示）
+
+        返回:
+            list[dict] 或 QuerySet
+        """
+        queryset = cls.objects.all()
+
+        # 过滤有主人的武器
+        if only_owned:
+            queryset = queryset.filter(owner_character__isnull=False)
+
+        # 搜索功能
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+
+        # 限制数量
+        if limit is not None:
+            queryset = queryset[:limit]
+
+        if not as_dict:
+            return queryset  # 返回 QuerySet，适合链式调用
+
+        # 序列化为字典列表（推荐给 API / 模板使用）
+        result = []
+        for weapon in queryset.select_related('owner_character'):
+            item = {
+                "id": weapon.id,
+                "formatted_id": weapon.formatted_id,
+                "name": weapon.name,
+                "description": weapon.description or "",
+                "created_at": weapon.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "owner": weapon.owner_character,
+            }
+
+            if include_owner and weapon.owner_character:
+                item["owner"] = {
+                    "id": weapon.owner_character.id,
+                    "name": weapon.owner_character.name,
+                    "avatar": weapon.owner_character.avatar.url if hasattr(weapon.owner_character, 'avatar') and weapon.owner_character.avatar else None
+                }
+            elif include_owner:
+                item["owner"] = {"id": None, "name": "无主", "avatar": None}
+
+            result.append(item)
+
+        return result
+
+    # 可选：快速获取 JSON 字符串（用于 API）
+    @classmethod
+    def all_weapon_json(cls, **kwargs) -> str:
+        """
+        直接返回 JSON 字符串（常用于调试或简单接口）
+        """
+        data = cls.all_weapon(as_dict=True, **kwargs)
+        return json.dumps(data, ensure_ascii=False, indent=2)
 
 
 class Continent(models.Model):

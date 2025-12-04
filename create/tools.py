@@ -1,8 +1,12 @@
 from django.core.files.storage import default_storage
 from io import BytesIO
-from .models import Character, Calamity, Chapter, Character_Relationship  # 假设模型在当前app中
+from .models import Character, Calamity, Chapter, Character_Relationship, Weapon  # 假设模型在当前app中
 from django.core.exceptions import ObjectDoesNotExist
-
+from django.conf import settings
+from django.db import connection
+import os
+import json
+from typing import List, Dict, Any
 
 class Query:
     def __init__(self):
@@ -116,7 +120,7 @@ class Query:
         except ObjectDoesNotExist:
             raise ObjectDoesNotExist(f"未找到章节号为 {chapter_id} 的章节")
 
-    def all_relationship(as_dict=True):
+    def all_relationship(self,as_dict=True):
         """
         获取 Character_Relationship 表的所有关系数据。
 
@@ -154,6 +158,10 @@ class Query:
         # 辅助：单条关系 → dict（统一结构，前端/模板直接使用）
         # ------------------------------------------------------------------
 
+    def all_weapon(self)->List[dict]:
+        data  = Weapon.all_weapon()
+        print(data)
+        return data
 
     def _rel_to_dict(rel: Character_Relationship) -> dict:
         """
