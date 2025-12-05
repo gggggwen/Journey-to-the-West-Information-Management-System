@@ -29,4 +29,6 @@ python manage.py runserver # 运行服务器
 前端纯HTML 后端Django
 
 ### 3.功能亮点
-a.可实现显示角色图谱,图谱**可随鼠标**动态滑动,点击角色节点可跳转至相应角色介绍
+a.可实现显示角色图谱,图谱**可随鼠标**动态滑动,点击角色节点可跳转至相应角色介绍。
+
+![image](https://github.com/gggggwen/Journey-to-the-West-Information-Management-System/blob/main/media/demo/demo.gif)
